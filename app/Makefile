@@ -1,6 +1,28 @@
 # Nome da imagem e variáveis de versão
 APP_IMAGE_NAME = opencv-webcam-app
-.PHONY: xhost build run stop clean
+.PHONY: build-base-img build xhost run run-dev stop clean
+
+build-base-img:
+	@echo "Building Base Docker image for application..."
+	docker run --name opencv-webcam-base-tmp  python:3.10-slim \
+    bash -c " apt-get update && \
+    apt-get install -y python3-opencv \
+    libgl1-mesa-glx \
+    cmake \
+    libboost-all-dev \
+    build-essential \
+    libopenblas-dev \
+    libx11-dev \
+    libgtk2.0-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev && \
+    rm -rf /var/lib/apt/lists/*" && \
+	docker commit opencv-webcam-base-tmp opencv-webcam-base:latest && \
+    docker rm opencv-webcam-base-tmp
 
 # Alvo para construir a imagem da aplicação
 build:
@@ -11,27 +33,27 @@ build:
 xhost:
 	xhost +local:docker
 
-# Instala as dependências e roda o script
 run:
 	docker run -it --rm --device=/dev/video0:/dev/video0  \
 		-e DISPLAY=$(DISPLAY) \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		$(APP_IMAGE_NAME)
 
-run-without-img:
+run-dev:
 	docker run -it --rm --device=/dev/video0:/dev/video0  \
 		-e DISPLAY=$(DISPLAY) \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		-v $(PWD)/face_recognition:/app/face_recognition \
 		-v $(PWD)/main.py:/app/main.py \
 		$(APP_IMAGE_NAME)
 
 # Alvo para parar e remover contêineres
 stop:
 	@echo "Stopping and removing containers..."
-	-docker stop $(APP_IMAGE_NAME)
-	-docker rm $(APP_IMAGE_NAME)
+	docker stop $(APP_IMAGE_NAME)
+	docker rm $(APP_IMAGE_NAME)
 
 # Alvo para limpar os volumes de dados e as imagens
 clean: stop
 	@echo "Cleaning up Docker volumes and images..."
-	-docker rmi $(APP_IMAGE_NAME):latest
+	docker rmi $(APP_IMAGE_NAME):latest
