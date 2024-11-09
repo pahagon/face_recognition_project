@@ -1,6 +1,6 @@
 # Nome da imagem e variáveis de versão
 APP_IMAGE_NAME = opencv-webcam-app
-.PHONY: build-base-img build xhost run run-dev stop clean
+.PHONY: build-base-img build xhost run run-dev run-preprocess-photos stop clean
 
 build-base-img:
 	@echo "Building Base Docker image for application..."
