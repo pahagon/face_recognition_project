@@ -44,8 +44,15 @@ run-dev:
 		-e DISPLAY=$(DISPLAY) \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v $(PWD)/face_recognition:/app/face_recognition \
+		-v $(PWD)/photos:/app/photos \
 		-v $(PWD)/main.py:/app/main.py \
 		$(APP_IMAGE_NAME)
+
+run-preprocess-photos:
+		docker run -it --rm \
+		-v $(PWD)/photos:/app/photos \
+		-v $(PWD)/preprocess_photo.py:/app/preprocess_photo.py \
+		$(APP_IMAGE_NAME) bash -c "python preprocess_photo.py"
 
 # Alvo para parar e remover contêineres
 stop:
