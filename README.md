@@ -61,13 +61,13 @@ P.S Projeto desenvolvido no Ubuntu 24.04.1 LTS
    make xhost run-dev
    ```
 
-. **Parar e Limpar os Contêineres**:
+4. **Parar e Limpar os Contêineres**:
 
    ```bash
    make stop
    ```
 
-. **Limpar Tudo (Contêineres, Volumes e Imagens)**:
+5. **Limpar Tudo (Contêineres, Volumes e Imagens)**:
 
    ```bash
    make clean
