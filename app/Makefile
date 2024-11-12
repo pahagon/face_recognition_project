@@ -1,66 +1,46 @@
-# Nome da imagem e variáveis de versão
-APP_IMAGE_NAME = opencv-webcam-app
-.PHONY: build-base-img build xhost run run-dev run-preprocess-photos stop clean
+APP_IMAGE_NAME = face-recognition-webcam-app
+.PHONY: build xhost run run-dev run-preprocess-photos stop clean
 
-build-base-img:
-	@echo "Building Base Docker image for application..."
-	docker run --name opencv-webcam-base-tmp  python:3.10-slim \
-    bash -c " apt-get update && \
-    apt-get install -y python3-opencv \
-    libgl1-mesa-glx \
-    cmake \
-    libboost-all-dev \
-    build-essential \
-    libopenblas-dev \
-    libx11-dev \
-    libgtk2.0-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev && \
-    rm -rf /var/lib/apt/lists/*" && \
-	docker commit opencv-webcam-base-tmp opencv-webcam-base:latest && \
-    docker rm opencv-webcam-base-tmp
+help:
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Targets:"
+	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-# Alvo para construir a imagem da aplicação
-build:
-	@echo "Building Docker image for the application..."
+build: ## Build Docker image with application
+	@cp -r $(shell pwd)/../face_recognition $(shell pwd)/.
 	docker build -t $(APP_IMAGE_NAME):latest .
+	@rm -r $(shell pwd)/face_recognition
 
-#Configurar Host para permiter acesso ao display X11
-xhost:
+xhost: ## Allow container connect on X11 host server
 	xhost +local:docker
 
-run:
+run: ## Run App from docker image
 	docker run -it --rm --device=/dev/video0:/dev/video0  \
 		-e DISPLAY=$(DISPLAY) \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		$(APP_IMAGE_NAME)
 
-run-dev:
+run-dev: ## Run App using Docker image and host code and photo dir
 	docker run -it --rm --device=/dev/video0:/dev/video0  \
 		-e DISPLAY=$(DISPLAY) \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		-v $(PWD)/face_recognition:/app/face_recognition \
-		-v $(PWD)/photos:/app/photos \
+		-v $(PWD)/../face_recognition:/app/face_recognition \
+		-v $(PWD)/../photos:/app/photos \
 		-v $(PWD)/main.py:/app/main.py \
 		$(APP_IMAGE_NAME)
 
-run-preprocess-photos:
+run-preprocess-photos: ## Pre-process images from photos dir
 		docker run -it --rm \
-		-v $(PWD)/photos:/app/photos \
+		-v $(PWD)/../photos:/app/photos \
 		-v $(PWD)/preprocess_photo.py:/app/preprocess_photo.py \
 		$(APP_IMAGE_NAME) bash -c "python preprocess_photo.py"
 
-# Alvo para parar e remover contêineres
-stop:
+stop: ## Stops and removes container
 	@echo "Stopping and removing containers..."
 	docker stop $(APP_IMAGE_NAME)
 	docker rm $(APP_IMAGE_NAME)
 
-# Alvo para limpar os volumes de dados e as imagens
-clean: stop
+clean: stop ## Cleans docker volumes and images
 	@echo "Cleaning up Docker volumes and images..."
 	docker rmi $(APP_IMAGE_NAME):latest

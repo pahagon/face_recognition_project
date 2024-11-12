@@ -1,8 +1,13 @@
-FROM opencv-webcam-base:latest
+FROM face-recognition-base:latest
 
-RUN apt-get update && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y \
+    python3-opencv \
+    libgl1-mesa-glx && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY ../face_recognition/ .
 COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt

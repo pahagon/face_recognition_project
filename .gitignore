@@ -64,7 +64,7 @@ target/
 
 .idea/
 
-app/photos/Juliana.jpg
-app/photos/paulo.jpg
-app/photos/Arthur.jpg
-app/photos/Thomas.jpg
+photos/Juliana.jpg
+photos/paulo.jpg
+photos/Arthur.jpg
+photos/Thomas.jpg

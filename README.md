@@ -10,7 +10,7 @@ Este é um projeto de reconhecimento facial que utiliza webcam e modelos pré-tr
 
 ## Requisitos
 
-- **Python 3.8+**
+- **Python 3.9+**
 - **Docker** 
 - **Bibliotecas Python**:
   - `face_recognition`
@@ -23,56 +23,17 @@ Este é um projeto de reconhecimento facial que utiliza webcam e modelos pré-tr
 ```plaintext
 face_recognition_project/
 │
-├── app/
-│   ├── face_recognition     # Lib que facilita o uso da dlib
-│   ├── photos               # Diretórios com as fotos que serão usadas para o reconhecimento facial
-│   ├── Dockerfile           # Dockerfile para a aplicação Python
-│   ├── Makefile             # Automatização o processo de construção dos contêiners Docker 
-│   ├── main.py              # Código principal da aplicação Python
-│   ├── preprocess_photo.py  # Código que préprocessa as fotos que serão usadas durante o excecussão da aplicação principal
-│   └── requirements.txt     # Dependências Python
-└── README.md                # Documentação do projeto
+├── app/                     # Aplicação standalone que usa a webcam para detectar faces
+├── face_recognition         # Lib que facilita o uso da dlib
+├── photos                   # Diretórios com as fotos que serão usadas para o reconhecimento facial
+└── web/                     # Aplicação web que usa a webcam para detectar faces
+```
+## Criando a imagem Docker base de todos os projetos 
+
+```bash
+make build
 ```
 
-## Executando o Projeto com Docker
-
-Este projeto inclui um `Makefile` que automatiza o processo de construção e execução dos contêineres Docker para a aplicação.
-
-P.S Projeto desenvolvido no Ubuntu 24.04.1 LTS
-
-### Passos para Executar com Docker
-
-1. **Construir a Imagem Docker**:
-
-   ```bash
-   make build-base-img build
-   ```
-   
-2. **Pre-processar as fotos**:
-   Copie as fotos que deseja usar para fazer o reconhecimento facil para o diretório photos, depois execute:
-   
-   ```bash
-   make preprocess-photo
-   ```
-  
-3. **Iniciar a Aplicação Python**:
-
-   ```bash
-   make xhost run-dev
-   ```
-
-4. **Parar e Limpar os Contêineres**:
-
-   ```bash
-   make stop
-   ```
-
-5. **Limpar Tudo (Contêineres, Volumes e Imagens)**:
-
-   ```bash
-   make clean
-   ```
-   
 ## Contribuição
 
 Contribuições são bem-vindas! Para contribuir:
