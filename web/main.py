@@ -69,13 +69,7 @@ def handle_embeddings(environ, start_response):
         face_encoding = json.loads(post_body.decode("utf-8"))
         face_encoding = np.array(face_encoding)
 
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-        best_match_index = np.argmin(face_distances)
-
-        name = "Unknow"
-        if matches[best_match_index]:
-            name = known_face_names[best_match_index]
+        name = query_embeddings(face_encoding)
 
         status = "200 OK"
         headers = [("Content-type", "application/json")]
@@ -88,6 +82,17 @@ def handle_embeddings(environ, start_response):
     start_response(status, headers)
 
     return [b"Method Not Allowed"]
+
+def query_embeddings(face_encoding):
+    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+    face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+    best_match_index = np.argmin(face_distances)
+
+    name = "Unknow"
+    if matches[best_match_index]:
+            name = known_face_names[best_match_index]
+
+    return name
 
 def handle_index(environ, start_response):
     if environ['REQUEST_METHOD'] == 'GET':
