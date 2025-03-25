@@ -12,11 +12,6 @@ Este é um projeto de reconhecimento facial que utiliza webcam e modelos pré-tr
 
 - **Python 3.9+**
 - **Docker** 
-- **Bibliotecas Python**:
-  - `face_recognition`
-  - `psycopg2`
-  - `opencv-python-headless`
-  - `dlib`
 
 ## Estrutura do Projeto
 
