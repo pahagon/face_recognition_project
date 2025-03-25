@@ -18,7 +18,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY face_recognition/ .
+COPY face_recognition/ /app/face_recognition/
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
