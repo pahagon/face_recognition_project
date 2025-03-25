@@ -16,3 +16,9 @@ RUN apt-get update && \
     libavformat-dev \
     libswscale-dev && \
     rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY face_recognition/ .
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt

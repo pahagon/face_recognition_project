@@ -8,9 +8,7 @@ help:
 	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 build: ## Build Docker image with application
-	@cp -r $(shell pwd)/../face_recognition $(shell pwd)/.
 	docker build -t $(APP_IMAGE_NAME):latest .
-	@rm -r $(shell pwd)/face_recognition
 
 run-dev: ## Run App using Docker image and host code and photo dir
 	docker run -it --rm \
@@ -43,3 +41,12 @@ run-redis-check: ## Check if face embeddings are in redis
 		-v $(PWD)/../photos:/app/photos \
 		-v $(PWD)/redis/check.py:/app/main.py \
 		$(APP_IMAGE_NAME)
+
+stop: ## Stops and removes container
+	@echo "Stopping and removing containers..."
+	docker stop $(APP_IMAGE_NAME)
+	docker rm $(APP_IMAGE_NAME)
+
+clean: ## Cleans docker volumes and images
+	@echo "Cleaning up Docker volumes and images..."
+	docker rmi -f $(APP_IMAGE_NAME):latest
