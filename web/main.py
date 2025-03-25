@@ -1,18 +1,8 @@
-import os
-import glob
+import redis
 import json
 import face_recognition
 import numpy as np
-from pathlib import Path
 from wsgiref.simple_server import make_server
-
-known_face_encodings = []
-known_face_names = []
-for f in glob.glob(os.path.join("photos/", "*.jpg")):
-    image = face_recognition.load_image_file(f)
-    face_encoding = face_recognition.face_encodings(image)[0]
-    known_face_encodings.append(face_encoding)
-    known_face_names.append(Path(f).stem)
 
 host = "0.0.0.0"
 port = 5000
@@ -69,13 +59,7 @@ def handle_embeddings(environ, start_response):
         face_encoding = json.loads(post_body.decode("utf-8"))
         face_encoding = np.array(face_encoding)
 
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-        best_match_index = np.argmin(face_distances)
-
-        name = "Unknow"
-        if matches[best_match_index]:
-            name = known_face_names[best_match_index]
+        name = query_embeddings(face_encoding)
 
         status = "200 OK"
         headers = [("Content-type", "application/json")]
@@ -88,6 +72,27 @@ def handle_embeddings(environ, start_response):
     start_response(status, headers)
 
     return [b"Method Not Allowed"]
+
+r = redis.Redis(host='172.17.0.1', port=6379, decode_responses=True)
+def query_embeddings(face_encoding):
+    base_query = "*=>[KNN 2 @embedding $vec_param AS vector_score]"
+    face_encoding_float32 = np.array(face_encoding, dtype=np.float32)
+    query_vector = face_encoding_float32.tobytes()
+    query_params = {"vec_param": query_vector}
+    ret = r.execute_command(
+            "FT.SEARCH", "idx:embeddings",
+            base_query,
+            "PARAMS", "2", "vec_param", query_vector,
+            "RETURN", "1", "vector_score",
+            "SORTBY", "vector_score",
+            "DIALECT", "2"
+    )
+    print(ret)
+    name = "Unknow"
+    if ret[0] != 0 and float(ret[2][1]) > 0.02:
+        name = ret[1]
+
+    return name
 
 def handle_index(environ, start_response):
     if environ['REQUEST_METHOD'] == 'GET':
