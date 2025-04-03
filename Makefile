@@ -15,3 +15,7 @@ build: ## Builds base image from all projects of face-recognition
 clean: ## Removes docker images
 	@echo "Cleaning up Docker volumes and images..."
 	docker rmi $(IMAGE_NAME):latest
+
+intall-deps: ## Install dependencies
+	@echo "Installing dependencies..."
+	ansible-playbook --ask-become ansible/localhost.yml

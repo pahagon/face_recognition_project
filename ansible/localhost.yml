@@ -1,0 +1,95 @@
+
+---
+- name: "Install Docker"
+  hosts: localhost
+  connection: local
+  become: true
+  vars_files:
+    - common_vars.yml 
+  tasks:
+    - name: Add a google Apt signing key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/trusted.gpg.d/docker.gpg
+        state: present
+
+    - name: Add Docker repository into sources list
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker.gpg] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+        filename: docker
+
+    - name: Update apt cache
+      apt: update_cache=yes
+      become: true
+
+    - name: Install Docker
+      package:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: latest
+
+    - name: "Add {{ my_user }} user to docker group"
+      user:
+        name: '{{ my_user }}'
+        state: present
+        groups: 'docker,{{ my_group }}'
+        append: yes
+
+- name: Instalação do Minikube
+  hosts: all
+  become: true
+  vars:
+    kubectl_version: "v1.29.0"
+    minikube_version: "v1.32.0"
+  tasks:
+    - name: Atualizar apt
+      apt:
+        update_cache: yes
+
+    - name: Instalar pacotes necessários
+      apt:
+        name:
+          - curl
+          - apt-transport-https
+          - ca-certificates
+          - conntrack
+        state: present
+
+    - name: Baixar minikube
+      get_url:
+        url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
+        dest: /usr/local/bin/minikube
+        mode: '0755'
+
+    - name: Renomear binário do minikube
+      command: mv /usr/local/bin/minikube-linux-amd64 /usr/local/bin/minikube
+      args:
+        creates: /usr/local/bin/minikube
+
+- name: Instalação do Helm
+  hosts: all
+  become: yes
+  tasks:
+    - name: Baixar script de instalação do Helm
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
+    - name: Executar script de instalação do Helm
+      command: /tmp/get_helm.sh
+
+    - name: Verificar versão do Helm instalada
+      command: helm version
+      register: helm_version
+      changed_when: false
+
+    - name: Exibir a versão do Helm
+      debug:
+        var: helm_version.stdout
+

@@ -8,10 +8,6 @@ Este é um projeto de reconhecimento facial que utiliza webcam e modelos pré-tr
 - Extração de embeddings faciais usando o modelo pré-treinado.
 - Comparação de embeddings para autenticação ou verificação de identidade.
 
-## Requisitos
-
-- **Python 3.9+**
-- **Docker** 
 
 ## Estrutura do Projeto
 
@@ -30,14 +26,23 @@ make build
 ```
 
 ## Contribuição
+Contribuições são bem-vindas! 
 
-Contribuições são bem-vindas! Para contribuir:
+O Projeto foi desenvolvido usando Ubuntu 24.04.1 LTS
 
-1. Faça um fork do projeto.
-2. Crie uma branch para sua feature (`git checkout -b minha-feature`).
-3. Commit suas alterações (`git commit -m 'Adiciona minha feature'`).
-4. Faça um push para a branch (`git push origin minha-feature`).
-5. Abra um Pull Request.
+### Requisitos
+
+- **Python 3.9+**
+- **Docker**
+- **MiniKube**
+- **Helm**
+
+Você pode instalar as dependências usando o comando:
+```bash
+make install-deps
+```
+
+A task vai usar uma receita ansible que vc pode usar para instalar todas as dependências para desenvolvimento.
 
 ## Licença
 
