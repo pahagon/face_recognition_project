@@ -15,9 +15,12 @@ clean: ## Cleans docker volumes and images
 	docker rmi -f $(APP_IMAGE_NAME):latest
 
 run-local: ## Run App using Docker image and host code and photo dir
-	docker run -it --rm \
+	docker run --name fc-webapp -it --rm \
 		-v $(PWD)/../face_recognition:/app/face_recognition \
 		-v $(PWD)/main.py:/app/main.py \
+		-e FC_REDIS_HOST=$(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fc-redis) \
+		-e FC_REDIS_PORT=6379 \
+		-e FC_REDIS_CLUSTER=false \
 		-p 5000:5000 \
 		$(APP_IMAGE_NAME)
 
@@ -30,7 +33,7 @@ run-local-web-server: ## Starts a development web server
 	cd assets && python3 -m http.server
 
 run-local-redis: ## Starts a development redis server
-	docker run -d -p 6379:6379 redis/redis-stack-server:latest
+	docker run --name fc-redis -d -p 6379:6379 redis/redis-stack-server:latest
 
 run-local-redis-create-schema: ## Create schema in redis
 	docker run -it --rm \
