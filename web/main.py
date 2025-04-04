@@ -1,4 +1,4 @@
-from redis.cluster import RedisCluster
+import redis
 import os
 import json
 import face_recognition
@@ -10,6 +10,7 @@ port = os.getenv('FR_APP_PORT') or 5000
 
 redis_host = os.getenv('FR_REDIS_HOST') or "127.0.0.1"
 redis_port = os.getenv('FR_REDIS_PORT') or 6379
+redis_cluster = os.getenv('FR_REDIS_CLUSTER') or "false"
 
 allow_origins = [
     "http://{host}:{port}".format(host=host, port=port),
@@ -77,14 +78,19 @@ def handle_embeddings(environ, start_response):
 
     return [b"Method Not Allowed"]
 
-foo = [{"name": redis_host, "port": redis_port}]
-r = RedisCluster(startup_nodes=foo, decode_responses=True)
+
+redis_client = None
+if redis_cluster.lower() == "true":
+    redis_client = redis.cluster.RedisCluster(startup_nodes=[{"host": redis_host, "port": redis_port}], decode_responses=True)
+else:
+    redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+
 def query_embeddings(face_encoding):
     base_query = "*=>[KNN 2 @embedding $vec_param AS vector_score]"
     face_encoding_float32 = np.array(face_encoding, dtype=np.float32)
     query_vector = face_encoding_float32.tobytes()
     query_params = {"vec_param": query_vector}
-    ret = r.execute_command(
+    ret = redis_client.execute_command(
             "FT.SEARCH", "idx:embeddings",
             base_query,
             "PARAMS", "2", "vec_param", query_vector,
