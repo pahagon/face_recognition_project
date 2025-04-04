@@ -5,10 +5,23 @@ import numpy as np
 import face_recognition
 from pathlib import Path
 
-r = redis.Redis(host='172.17.0.1', port=6379, decode_responses=True)
+redis_host = os.getenv('FC_REDIS_HOST')
+redis_port = os.getenv('FC_REDIS_PORT')
+redis_password = os.getenv('FC_REDIS_PASSWORD')
+
+# conecta ao Redis local (com RediSearch)
+redis_client = redis.Redis(
+    host=redis_host,
+    port=redis_port,
+    decode_responses=True,
+    password=redis_password,
+)
 
 for f in glob.glob(os.path.join("photos/", "*.jpg")):
     image = face_recognition.load_image_file(f)
     face_encoding = face_recognition.face_encodings(image)[0]
     face_encoding_float32 = np.array(face_encoding, dtype=np.float32)
-    r.hset(Path(f).stem, mapping={"embedding": face_encoding_float32.tobytes()})
+    redis_client.hset(
+        Path(f).stem,
+        mapping={"embedding": face_encoding_float32.tobytes()}
+    )

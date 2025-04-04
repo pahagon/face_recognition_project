@@ -10,13 +10,23 @@ port = os.getenv('FR_APP_PORT') or 5000
 
 redis_host = os.getenv('FC_REDIS_HOST')
 redis_port = os.getenv('FC_REDIS_PORT')
+redis_password = os.getenv('FC_REDIS_PASSWORD')
 redis_cluster = os.getenv('FC_REDIS_CLUSTER')
 
 redis_client = None
 if redis_cluster.lower() == "true":
-    redis_client = redis.cluster.RedisCluster(startup_nodes=[{"host": redis_host, "port": redis_port}], decode_responses=True)
+    redis_client = redis.cluster.RedisCluster(
+        startup_nodes=[{"host": redis_host, "port": redis_port}],
+        decode_responses=True,
+        password=redis_password,
+    )
 else:
-    redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+    redis_client = redis.Redis(
+        host=redis_host,
+        port=redis_port,
+        decode_responses=True,
+        password=redis_password,
+    )
 
 allow_origins = [
     "http://{host}:{port}".format(host=host, port=port),

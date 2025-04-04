@@ -1,5 +1,5 @@
 APP_IMAGE_NAME = face-recognition-webcam-web
-.PHONY: help build clean run-local stop-local run-local-web-server run-local-redis run-local-redis-create-schema run-local-redis-seeds run-local-redis-check run-helm-install-bitmami run-helm-install-redis
+.PHONY: help build clean run-local stop-local run-local-web-server gen-passwd-local-redis run-local-redis run-local-redis-create-schema run-local-redis-seeds run-local-redis-check run-helm-install-bitmami run-helm-install-redis run-helm-uninstall-redis create-redis-client-pod connect-redis-client-pod
 
 help:
 	@echo "Usage: make <target>"
@@ -15,12 +15,14 @@ clean: ## Cleans docker volumes and images
 	docker rmi -f $(APP_IMAGE_NAME):latest
 
 run-local: ## Run App using Docker image and host code and photo dir
+	@. ./redis_passwd.env && \
 	docker run --name fc-webapp -it --rm \
 		-v $(PWD)/../face_recognition:/app/face_recognition \
 		-v $(PWD)/main.py:/app/main.py \
 		-e FC_REDIS_HOST=$(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fc-redis) \
 		-e FC_REDIS_PORT=6379 \
 		-e FC_REDIS_CLUSTER=false \
+		-e FC_REDIS_PASSWORD=$$FC_REDIS_PASSWORD \
 		-p 5000:5000 \
 		$(APP_IMAGE_NAME)
 
@@ -32,26 +34,48 @@ stop-local: ## Stops and removes container
 run-local-web-server: ## Starts a development web server
 	cd assets && python3 -m http.server
 
+gen-passwd-local-redis: ## Generates a password for redis container
+	echo FC_REDIS_PASSWORD=$(shell openssl rand -hex 16) > redis_passwd.env
+
 run-local-redis: ## Starts a development redis server
-	docker run --name fc-redis -d -p 6379:6379 redis/redis-stack-server:latest
+	@. ./redis_passwd.env && \
+	docker run --rm \
+	    --name fc-redis -d -p 6379:6379 \
+		-e REDIS_ARGS="--requirepass $$FC_REDIS_PASSWORD" \
+		redis/redis-stack:latest
 
 run-local-redis-create-schema: ## Create schema in redis
+	@. ./redis_passwd.env && \
 	docker run -it --rm \
 		-v $(PWD)/redis/schema.py:/app/main.py \
+		-e FC_REDIS_HOST=$(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fc-redis) \
+		-e FC_REDIS_PORT=6379 \
+		-e FC_REDIS_CLUSTER=false \
+		-e FC_REDIS_PASSWORD=$$FC_REDIS_PASSWORD \
 		$(APP_IMAGE_NAME)
 
-run-local-redis-seeds: ## Insert face embeddings into redis
+run-local-redis-seeds: run-local-redis-create-schema ## Insert face embeddings into redis
+	@. ./redis_passwd.env && \
 	docker run -it --rm \
 		-v $(PWD)/../face_recognition:/app/face_recognition \
 		-v $(PWD)/../photos:/app/photos \
 		-v $(PWD)/redis/seed.py:/app/main.py \
+		-e FC_REDIS_HOST=$(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fc-redis) \
+		-e FC_REDIS_PORT=6379 \
+		-e FC_REDIS_CLUSTER=false \
+		-e FC_REDIS_PASSWORD=$$FC_REDIS_PASSWORD \
 		$(APP_IMAGE_NAME)
 
 run-local-redis-check: ## Check if face embeddings are in redis
+	@. ./redis_passwd.env && \
 	docker run -it --rm \
 		-v $(PWD)/../face_recognition:/app/face_recognition \
 		-v $(PWD)/../photos:/app/photos \
 		-v $(PWD)/redis/check.py:/app/main.py \
+		-e FC_REDIS_HOST=$(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fc-redis) \
+		-e FC_REDIS_PORT=6379 \
+		-e FC_REDIS_CLUSTER=false \
+		-e FC_REDIS_PASSWORD=$$FC_REDIS_PASSWORD \
 		$(APP_IMAGE_NAME)
 
 run-helm-install-bitmami: ## Install helm
@@ -62,9 +86,6 @@ run-helm-install-redis: ## Starts a redis server in minikube
 
 run-helm-uninstall-redis: ## Uninstall redis server in minikube
 	helm uninstall fr-redis
-
-export-redis-password: ## Export redis password
-	@echo "export REDIS_PASSWORD=$(shell kubectl get secret --namespace default fr-redis -o jsonpath="{.data.redis-password}" | base64 --decode)"
 
 RANDOM ?= `head -128 /dev/urandom | cksum | cut -d ' ' -f1`
 create-redis-client-pod: ## Create redis client pod

@@ -1,8 +1,18 @@
+import os
 import redis
 import numpy as np
 
+redis_host = os.getenv('FC_REDIS_HOST')
+redis_port = os.getenv('FC_REDIS_PORT')
+redis_password = os.getenv('FC_REDIS_PASSWORD')
+
 # conecta ao Redis local (com RediSearch)
-r = redis.Redis(host='172.17.0.1', port=6379, decode_responses=True)
+redis_client = redis.Redis(
+    host=redis_host,
+    port=redis_port,
+    decode_responses=True,
+    password=redis_password,
+)
 
 # cria índice no RediSearch
 schema = {
@@ -15,7 +25,7 @@ schema = {
 }
 
 # Comando FT.CREATE para RediSearch (exemplo)
-r.execute_command(
+redis_client.execute_command(
     "FT.CREATE", "idx:embeddings",
     "ON", "HASH",
     "SCHEMA",
