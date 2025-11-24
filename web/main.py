@@ -1,11 +1,32 @@
 import redis
+import os
 import json
 import face_recognition
 import numpy as np
 from wsgiref.simple_server import make_server
 
-host = "0.0.0.0"
-port = 5000
+host = os.getenv('FR_APP_HOST') or "0.0.0.0"
+port = os.getenv('FR_APP_PORT') or 5000
+
+redis_host = os.getenv('FC_REDIS_HOST')
+redis_port = os.getenv('FC_REDIS_PORT')
+redis_password = os.getenv('FC_REDIS_PASSWORD')
+redis_cluster = os.getenv('FC_REDIS_CLUSTER')
+
+redis_client = None
+if redis_cluster.lower() == "true":
+    redis_client = redis.cluster.RedisCluster(
+        startup_nodes=[{"host": redis_host, "port": redis_port}],
+        decode_responses=True,
+        password=redis_password,
+    )
+else:
+    redis_client = redis.Redis(
+        host=redis_host,
+        port=redis_port,
+        decode_responses=True,
+        password=redis_password,
+    )
 
 allow_origins = [
     "http://{host}:{port}".format(host=host, port=port),
@@ -73,15 +94,13 @@ def handle_embeddings(environ, start_response):
 
     return [b"Method Not Allowed"]
 
-r = redis.Redis(host='172.17.0.1', port=6379, decode_responses=True)
 def query_embeddings(face_encoding):
-    base_query = "*=>[KNN 2 @embedding $vec_param AS vector_score]"
     face_encoding_float32 = np.array(face_encoding, dtype=np.float32)
     query_vector = face_encoding_float32.tobytes()
     query_params = {"vec_param": query_vector}
-    ret = r.execute_command(
+    ret = redis_client.execute_command(
             "FT.SEARCH", "idx:embeddings",
-            base_query,
+            "*=>[KNN 2 @embedding $vec_param AS vector_score]",
             "PARAMS", "2", "vec_param", query_vector,
             "RETURN", "1", "vector_score",
             "SORTBY", "vector_score",
