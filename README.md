@@ -23,11 +23,27 @@ face_recognition_project/
 ├── photos                   # Diretórios com as fotos que serão usadas para o reconhecimento facial
 └── web/                     # Aplicação web que usa a webcam para detectar faces
 ```
-## Criando a imagem Docker base de todos os projetos 
+## Criando a imagem Docker base de todos os projetos
 
 ```bash
 make build
 ```
+
+## Deploy na AWS
+
+Para fazer deploy deste projeto na AWS usando ECS e ECR:
+
+1. Configure suas credenciais AWS:
+```bash
+aws configure
+```
+
+2. Execute o script de setup:
+```bash
+./setup-aws.sh
+```
+
+Para instruções detalhadas, consulte o [Guia de Deploy AWS](AWS_DEPLOYMENT.md).
 
 ## Contribuição
 

@@ -68,3 +68,6 @@ photos/Juliana.jpg
 photos/paulo.jpg
 photos/Arthur.jpg
 photos/Thomas.jpg
+
+# AWS Configuration
+aws-config.env
